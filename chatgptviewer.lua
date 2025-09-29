@@ -449,8 +449,8 @@ function ChatGPTViewer:handleTextSelection(text, hold_duration, start_idx, end_i
   if Device:hasClipboard() then
     Device.input.setClipboardText(text)
     UIManager:show(Notification:new {
-      text = start_idx == end_idx and _("Word copied to clipboard.")
-          or _("Selection copied to clipboard."),
+      text = start_idx == end_idx and _("Word copied to clipboard. Word: '" .. text .. "'")
+          or _("Selection copied to clipboard. Text: '" .. text .. "'"),
     })
   end
 end

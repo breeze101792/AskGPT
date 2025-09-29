@@ -46,6 +46,36 @@ local function explainText(text, target_language)
   return queryChatGPT(explanation_history)
 end
 
+local function researchText(text, target_language)
+  local explanation_message = {
+    role = "user",
+    content = "Help to analyze this paragraph. Use ".. target_language .. " to explain the story/purpose of why the writter said the following things" .. ": " .. text
+  }
+  local explanation_history = {
+    {
+      role = "system",
+      content = "You are a helpful reading researcher assistant. Provide story behind the sentences without additional commentary."
+    },
+    explanation_message
+  }
+  return queryChatGPT(explanation_history)
+end
+
+local function dictionaryText(text, target_language, context)
+  local explanation_message = {
+    role = "user",
+    content = "Help to check dictionary for " .. text .. " in following context, and explain in " .. target_language .. ": " .. context
+  }
+  local explanation_history = {
+    {
+      role = "system",
+      content = "You are a helpful dictionary checker assistant. Provide direct dictionary content with the contex without additional commentary. Also provide more usages/examples for learner to master this word."
+    },
+    explanation_message
+  }
+  return queryChatGPT(explanation_history)
+end
+
 local function createResultText(highlightedText, message_history)
   local result_text = _("Highlighted text: ") .. "\"" .. highlightedText .. "\"\n\n"
 
@@ -76,6 +106,19 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
     role = "system",
     content = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
   }}
+
+  local prev_context, next_context
+  if ui.highlight then
+    prev_context, next_context = ui.highlight:getSelectedWordContext(15)
+  end
+  local full_context = ""
+  if prev_context then
+    full_context = full_context .. prev_context .. " "
+  end
+  full_context = full_context .. highlightedText
+  if next_context then
+    full_context = full_context .. " " .. next_context
+  end
 
   local function handleNewQuestion(chatgpt_viewer, question)
     table.insert(message_history, {
@@ -199,6 +242,70 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
           local result_text = createResultText(highlightedText, message_history)
           local chatgpt_viewer = ChatGPTViewer:new {
             title = _("Explanation"),
+            text = result_text,
+            onAskQuestion = handleNewQuestion
+          }
+
+          UIManager:show(chatgpt_viewer)
+        end)
+      end
+    })
+  end
+
+  if CONFIGURATION and CONFIGURATION.features and CONFIGURATION.features.translate_to then
+    table.insert(function_buttons, {
+      text = _("Research"),
+      callback = function()
+        showLoadingDialog()
+
+        UIManager:scheduleIn(0.1, function()
+          local research_text = researchText(highlightedText, CONFIGURATION.features.translate_to)
+
+          table.insert(message_history, {
+            role = "user",
+            content = "Explain the background of '" .. highlightedText .. "' in " .. CONFIGURATION.features.translate_to
+          })
+
+          table.insert(message_history, {
+            role = "assistant",
+            content = research_text
+          })
+
+          local result_text = createResultText(highlightedText, message_history)
+          local chatgpt_viewer = ChatGPTViewer:new {
+            title = _("Research"),
+            text = result_text,
+            onAskQuestion = handleNewQuestion
+          }
+
+          UIManager:show(chatgpt_viewer)
+        end)
+      end
+    })
+  end
+
+  if CONFIGURATION and CONFIGURATION.features and CONFIGURATION.features.translate_to then
+    table.insert(function_buttons, {
+      text = _("Dictionary"),
+      callback = function()
+        showLoadingDialog()
+
+        UIManager:scheduleIn(0.1, function()
+          local dictionary_text = dictionaryText(highlightedText, CONFIGURATION.features.translate_to, full_context)
+
+          table.insert(message_history, {
+            role = "user",
+            content = "Dictionary for " .. highlightedText .. " in " .. CONFIGURATION.features.translate_to .. " with context: " .. full_context
+          })
+
+          table.insert(message_history, {
+            role = "assistant",
+            content = dictionary_text
+          })
+
+          local result_text = createResultText(highlightedText, message_history)
+          local chatgpt_viewer = ChatGPTViewer:new {
+            title = _("Dictionary"),
             text = result_text,
             onAskQuestion = handleNewQuestion
           }

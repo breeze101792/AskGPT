@@ -32,4 +32,26 @@ function AskGPT:init()
   end)
 end
 
+function AskGPT:onDictButtonsReady(dict_popup, buttons)
+  if dict_popup.is_wiki_fullpage then
+      return
+  end
+
+  table.insert(buttons, 1, {{
+    id = "askgpt",
+    text = _("Ask ChatGPT"),
+    font_bold = false,
+    callback = function()
+      NetworkMgr:runWhenOnline(function()
+        if not updateMessageShown then
+          UpdateChecker.checkForUpdates()
+          updateMessageShown = false -- Set flag to true so it won't show again
+        end
+        showChatGPTDialog(self.ui, dict_popup.lookupword)
+      end)
+      dict_popup:onClose()
+    end
+  }})
+end
+
 return AskGPT
