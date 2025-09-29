@@ -23,7 +23,7 @@ function AskGPT:init()
         NetworkMgr:runWhenOnline(function()
           if not updateMessageShown then
             UpdateChecker.checkForUpdates()
-            updateMessageShown = true -- Set flag to true so it won't show again
+            updateMessageShown = false -- Set flag to true so it won't show again
           end
           showChatGPTDialog(self.ui, _reader_highlight_instance.selected_text.text)
         end)
