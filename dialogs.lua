@@ -15,61 +15,69 @@ if success then
 else
   print("configuration.lua not found, skipping...")
 end
+local general_instruction = "Note, don't bold words, use plain text only."
 
-local function translateText(text, target_language)
+local function translateText(text, contex, target_language)
   local translation_message = {
     role = "user",
-    content = "Translate the following text to " .. target_language .. ": " .. text
+    content = "Translate the Highlighted text to " .. target_language .. "." ..
+    "\nHighlighted text: '" .. text .. "'" .. "\nFull contex: '" .. contex .. "'"
   }
   local translation_history = {
     {
       role = "system",
-      content = "You are a helpful translation assistant. Provide direct translations without additional commentary."
+      content = "You are a helpful translation assistant. Provide direct translations without additional commentary." ..
+      "\n" .. general_instruction
     },
     translation_message
   }
   return queryChatGPT(translation_history)
 end
 
-local function explainText(text, target_language)
+local function explainText(text, contex, target_language)
   local explanation_message = {
     role = "user",
-    content = "Help to analyze this paragraph, explain difficut words/phrase/structure in " .. target_language .. ": " .. text
+    content = "Help to analyze the highlighted text, explain difficut words/phrase/structure in " .. target_language .. "." ..
+    "\nHighlighted text: '" .. text .. "'" .. "\nFull contex: '" .. contex .. "'"
   }
   local explanation_history = {
     {
       role = "system",
-      content = "You are a helpful language teacher. Provide direct translations and explination difficult words/grammar with clear and simple way without extra words."
+      content = "You are a helpful language teacher. Provide direct translations and explination difficult words/grammar with clear and simple way without extra words." ..
+      "\n" .. general_instruction
     },
     explanation_message
   }
   return queryChatGPT(explanation_history)
 end
 
-local function researchText(text, target_language)
+local function researchText(text, contex, target_language)
   local explanation_message = {
     role = "user",
-    content = "Help to analyze this paragraph. Use ".. target_language .. " to explain the story/purpose of why the writter said the following things" .. ": " .. text
+    content = "Help to analyze this highlighted text. Use ".. target_language .. " to explain the story/purpose of why the writter said the following things. " ..
+    "\nHighlighted text: '" .. text .. "'" .. "\nFull contex: '" .. contex .. "'"
   }
   local explanation_history = {
     {
       role = "system",
-      content = "You are a helpful reading researcher assistant. Provide story behind the sentences without additional commentary."
+      content = "You are a helpful reading researcher assistant. Provide story behind the sentences. ex. 1. why the author choose to use this phrase/words in this sentences. 2. Are there any stories or culture things behind this." ..
+      "\n" .. general_instruction
     },
     explanation_message
   }
   return queryChatGPT(explanation_history)
 end
 
-local function dictionaryText(text, target_language, context)
+local function dictionaryText(text, contex, target_language)
   local explanation_message = {
     role = "user",
-    content = "Help to check dictionary for " .. text .. " in following context, and explain in " .. target_language .. ": " .. context
+    content = "Help to check dictionary for '" .. text .. "', and explain it in " .. target_language .. ". Full contex: '" .. contex .. "'"
   }
   local explanation_history = {
     {
       role = "system",
-      content = "You are a helpful dictionary checker assistant. Provide direct dictionary content with the contex without additional commentary. Also provide more usages/examples for learner to master this word."
+      content = "You are a helpful dictionary checker assistant. Provide full dictionary content of this word without additional commentary. Including ipa/definitions/usages/examples for learner to master this word. Also include other meanings/phrases and related parts if exist." ..
+      "\n" .. general_instruction
     },
     explanation_message
   }
@@ -102,14 +110,15 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
   local title, author =
     ui.document:getProps().title or _("Unknown Title"),
     ui.document:getProps().authors or _("Unknown Author")
+  local default_prompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
   local message_history = message_history or {{
     role = "system",
-    content = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
+    content = default_prompt
   }}
 
   local prev_context, next_context
   if ui.highlight then
-    prev_context, next_context = ui.highlight:getSelectedWordContext(15)
+    prev_context, next_context = ui.highlight:getSelectedWordContext(20)
   end
   local full_context = ""
   if prev_context then
@@ -143,6 +152,15 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
       text = _("Cancel"),
       callback = function()
         UIManager:close(input_dialog)
+      end
+    },
+    {
+      text = _("Clear History"),
+      callback = function()
+        message_history = {{
+          role = "system",
+          content = default_prompt
+        }}
       end
     },
     {
@@ -195,7 +213,7 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
         showLoadingDialog()
 
         UIManager:scheduleIn(0.1, function()
-          local translated_text = translateText(highlightedText, CONFIGURATION.features.translate_to)
+          local translated_text = translateText(highlightedText, full_context, CONFIGURATION.features.translate_to)
 
           table.insert(message_history, {
             role = "user",
@@ -227,7 +245,7 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
         showLoadingDialog()
 
         UIManager:scheduleIn(0.1, function()
-          local explanation_text = explainText(highlightedText, CONFIGURATION.features.translate_to)
+          local explanation_text = explainText(highlightedText, full_context, CONFIGURATION.features.translate_to)
 
           table.insert(message_history, {
             role = "user",
@@ -259,7 +277,7 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
         showLoadingDialog()
 
         UIManager:scheduleIn(0.1, function()
-          local research_text = researchText(highlightedText, CONFIGURATION.features.translate_to)
+          local research_text = researchText(highlightedText, full_context, CONFIGURATION.features.translate_to)
 
           table.insert(message_history, {
             role = "user",
@@ -291,11 +309,11 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
         showLoadingDialog()
 
         UIManager:scheduleIn(0.1, function()
-          local dictionary_text = dictionaryText(highlightedText, CONFIGURATION.features.translate_to, full_context)
+          local dictionary_text = dictionaryText(highlightedText, full_context ,CONFIGURATION.features.translate_to)
 
           table.insert(message_history, {
             role = "user",
-            content = "Dictionary for " .. highlightedText .. " in " .. CONFIGURATION.features.translate_to .. " with context: " .. full_context
+            content = "Dictionary for " .. highlightedText .. " in " .. CONFIGURATION.features.translate_to
           })
 
           table.insert(message_history, {
