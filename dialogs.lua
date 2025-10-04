@@ -87,6 +87,7 @@ end
 local function createResultText(highlightedText, message_history)
   local result_text = _("Highlighted text: ") .. "\"" .. highlightedText .. "\"\n\n"
 
+  -- FIXME, Check null before reference it.
   for i = 3, #message_history do
     if message_history[i].role == "user" then
       result_text = result_text .. _("User: ") .. message_history[i].content .. "\n\n"

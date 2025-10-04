@@ -2,6 +2,8 @@
 
 Introducing AskGPT, a new plugin for KOReader that allows you to ask questions about the parts of the book you're reading and receive insightful answers from ChatGPT, an AI language model. With AskGPT, you can have a more interactive and engaging reading experience, and gain a deeper understanding of the content.
 
+Forked from https://github.com/drewbaumann/AskGPT.
+
 ## Getting Started
 
 To use this plugin, You'll need to do a few things:

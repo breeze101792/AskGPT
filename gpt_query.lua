@@ -86,6 +86,7 @@ local function queryChatGPT(message_history)
     end
   end
 
+  -- FIXME, ensure null check before return
   local response = json.decode(table.concat(responseBody))
   return response.choices[1].message.content
 end
