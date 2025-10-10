@@ -88,7 +88,11 @@ local function queryChatGPT(message_history)
 
     -- FIXME, ensure null check before return
     local response = json.decode(table.concat(responseBody))
-    return response.choices[1].message.content
+    if response and response.choices and response.choices[1] and response.choices[1].message and response.choices[1].message.content then
+        return response.choices[1].message.content
+    else
+        return "Error: Unexpected response format from ChatGPT API."
+    end
 end
 
 return queryChatGPT
